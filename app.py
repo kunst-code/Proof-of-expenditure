@@ -66,7 +66,7 @@ else:
                     7. 적격 증빙 검토 의견: (이 영수증이 회사 세무 비용 처리를 위한 세금계산서, 법인카드 영수증, 현금영수증 등의 적격 증빙 요건을 충족하는지 종합 의견을 1줄 요약해줘)
                     """
                     response = client.models.generate_content(
-                        model='gemini-2.0-flash-001',
+                        model='gemini-2.5-flash-lite',
                         contents=[image, prompt]
                     )
                     st.success("📊 분석 완료!")
