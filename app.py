@@ -11,7 +11,7 @@ st.set_page_config(page_title="사내 AI 지출증빙 시스템", page_icon="�
 # ======================================================================
 # ⚠️ [핵심 체크]: 큰따옴표 안에 주소와 anon 키를 정확하게 적어줍니다.
 # ======================================================================
-SUPABASE_URL = "https://dactmkqrckxzacrcihgc.supabase.co"
+SUPABASE_URL = "https://dactmkqrckxzacrzihgc.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_PCH09T4MVJ7uCQhyll-VtQ_pB1MnRJm"
 
 
