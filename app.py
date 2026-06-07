@@ -1,26 +1,42 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
+import io
+
+# 1. 웹 서버 자체의 환경 인코딩을 UTF-8로 강제 고정합니다.
+os.environ["PYTHONIOENCODING"] = "utf-8"
+os.environ["LANG"] = "ko_KR.UTF-8"
+
 import streamlit as st
 from supabase import create_client, Client
 import google.genai as genai
 from PIL import Image
 
-# 1. 웹페이지 기본 설정 (브라우저 탭에 표시될 이름)
+# 웹페이지 기본 설정
 st.set_page_config(page_title="사내 AI 지출증빙 시스템", page_icon="🧾", layout="centered")
 
 SUPABASE_URL = "https://dactmkqrckxzacrcihgc.supabase.co"
-SUPABASE_ANON_KEY = "여기에_Publishable_key_복사_붙여넣기"
+SUPABASE_ANON_KEY = "sb_publishable_PCH09T4MVJ7uCQhyll-VtQ_pB1MnRJm"
 
 
 # 중앙 서버에서 키를 원격으로 안전하게 로드하는 함수
-@st.cache_resource  # 웹페이지가 새로고침되어도 키를 매번 서버에서 다시 받지 않도록 캐싱합니다.
+@st.cache_resource
 def load_gemini_key():
     try:
-        supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+        # 주소와 키 값을 순수 스트링(ASCII 무결성) 형태로 강제 클렌징합니다.
+        safe_url = str(SUPABASE_URL).strip().encode('ascii', 'ignore').decode('ascii')
+        safe_anon_key = str(SUPABASE_ANON_KEY).strip().encode('ascii', 'ignore').decode('ascii')
+
+        supabase: Client = create_client(safe_url, safe_anon_key)
         response = supabase.table("app_config").select("key_value").eq("key_name", "GEMINI_API_KEY").execute()
+
         if response.data:
+            # 가져온 AQ... 키 값도 안전하게 공백 제거 후 문자열로 반환합니다.
             return str(response.data[0]['key_value']).strip()
     except Exception as e:
-        st.error(f"중앙 보안 서버 인증 실패: {e}")
+        # 에러 메시지 자체에서 ascii 충돌이 나지 않도록 안전하게 파싱합니다.
+        safe_err = str(e).encode('utf-8', errors='ignore').decode('utf-8', errors='ignore')
+        st.error(f"중앙 보안 서버 인증 실패: {safe_err}")
     return None
 
 
@@ -35,15 +51,13 @@ gemini_key = load_gemini_key()
 if not gemini_key:
     st.warning("⚠️ 시스템 준비 중: 관리자 인증 동기화가 필요합니다.")
 else:
-    # 2. 파일 업로드 컴포넌트 (웹 브라우저에 파일 드래그 앤 드롭 창 생성)
+    # 파일 업로드 컴포넌트
     uploaded_file = st.file_uploader("영수증 이미지를 선택하거나 여기로 끌어다 놓으세요.", type=["png", "jpg", "jpeg", "webp"])
 
     if uploaded_file is not None:
-        # 이미지 열기 및 화면 표시
         image = Image.open(uploaded_file)
         st.image(image, caption="업로드된 영수증", use_container_width=True)
 
-        # 분석 시작 버튼
         if st.button("🤖 AI 영수증 자동 분석 시작", type="primary"):
             with st.spinner("제미나이 AI가 영수증 텍스트와 적격 증빙 여부를 판단하고 있습니다..."):
                 try:
